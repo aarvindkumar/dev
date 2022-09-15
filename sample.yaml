@@ -1,0 +1,556 @@
+openapi: 3.0.1
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+  - url: http://localhost:8443/avtaltutkjoring/api/flex/v2/
+    description: Generated server url
+paths:
+  /flex:
+    post:
+      tags:
+        - flex-change
+      summary: Updates the flex option for shipment
+      operationId: postFlex
+      parameters:
+        - name: apikey
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlexRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlexResponse'
+        '422':
+          description: Shipment Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Shipment Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /landingpage/{shipmentId}:
+    get:
+      tags:
+        - flex-change
+      summary: Returns available flex options for shipment
+      operationId: getShipmentInfo
+      parameters:
+        - name: apikey
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: shipmentId
+          in: path
+          description: Shipment Number
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LandingPage'
+        '404':
+          description: Shipment Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Shipment Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /health:
+    get:
+      tags:
+        - flex-change-resource-v-2
+      summary: Returns health status of API
+      operationId: health
+      parameters:
+        - name: apikey
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+        '500':
+          description: Shipment Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        status:
+          type: string
+        code:
+          type: string
+        detail:
+          type: string
+        source:
+          $ref: '#/components/schemas/ErrorSource'
+    ErrorSource:
+      type: object
+      properties:
+        pointer:
+          type: string
+    Errors:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+    FlexResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - OK
+            - INVALID PAYMENT
+            - INVALID SHIPMENT ID
+            - INVALID SERVICE POINT ID
+            - INVALID REQUEST CONFIGURATION
+            - VALIDATION ERROR
+            - INTERNAL SERVER ERROR
+            - MISSING_OPERATION
+            - MISSING_OPTIONS
+            - TOO_MANY_OPTIONS
+            - TWO_OPTIONS
+            - NO_AVAILABLE_TIMESLOTS
+            - NO_TERMINAL
+            - FAILED_TO_CHANGE_DESTINATION_AT_MEDIAPOST(
+            - ALREADY_FLEXED
+            - OK
+        flexShipmentId:
+          type: string
+        errors:
+          type: array
+          properties:
+            empty:
+              type: boolean
+          items:
+            $ref: '#/components/schemas/Error'
+    Address:
+      required:
+        - city
+        - countryCode
+        - postalCode
+        - streetName
+      type: object
+      properties:
+        streetName:
+          type: array
+          items:
+            type: string
+        postalCode:
+          pattern: '[0-9]{3,5}'
+          type: string
+        city:
+          type: string
+        countryCode:
+          type: string
+    ChosenHomeDeliveryOptionV3:
+      type: object
+      properties:
+        address:
+          $ref: '#/components/schemas/Address'
+        timeSlot:
+          $ref: '#/components/schemas/TimeSlot'
+    ChosenServicePointOptionV3:
+      type: object
+      properties:
+        servicePointId:
+          type: string
+        servicePointCountryCode:
+          type: string
+    ChosenTerminalOption:
+      required:
+        - countryCode
+        - terminalId
+      type: object
+      properties:
+        terminalId:
+          type: string
+        countryCode:
+          type: string
+    ChosenWorkplaceOption:
+      type: object
+      properties:
+        address:
+          $ref: '#/components/schemas/Address'
+        companyName:
+          type: string
+    FlexRequest:
+      required:
+        - flexContext
+        - operation
+        - shipmentId
+      type: object
+      properties:
+        flexContext:
+          type: string
+          enum:
+            - CUSTOMER_SERVICE
+            - CONSIGNOR
+            - CONSIGNEE
+        operation:
+          type: string
+          enum:
+            - TO_HOME
+            - TO_SERVICE_POINT
+            - TO_TERMINAL
+            - TO_WORKPLACE
+        transactionId:
+          type: string
+        shipmentId:
+          type: string
+        chosenHomeDeliveryOption:
+          $ref: '#/components/schemas/ChosenHomeDeliveryOptionV3'
+        chosenServicePointOption:
+          $ref: '#/components/schemas/ChosenServicePointOptionV3'
+        chosenTerminalOption:
+          $ref: '#/components/schemas/ChosenTerminalOption'
+        chosenWorkplaceOption:
+          $ref: '#/components/schemas/ChosenWorkplaceOption'
+        customerEmail:
+          type: string
+        customerPhone:
+          type: string
+        requiresSignature:
+          type: boolean
+        additionalInformation:
+          type: string
+    TimeSlot:
+      required:
+        - date
+        - end
+        - start
+      type: object
+      properties:
+        date:
+          pattern: '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]'
+          type: string
+        start:
+          pattern: '[0-2][0-9]:[0-5][0-9]'
+          type: string
+        end:
+          pattern: '[0-2][0-9]:[0-5][0-9]'
+          type: string
+    AddressComponentsVo:
+      type: object
+      properties:
+        streetAddress:
+          type: string
+        streetAddress2:
+          type: string
+        postalCode:
+          type: string
+        postalArea:
+          type: string
+        countryCode:
+          type: string
+      xml:
+        name: addressComponents
+    AvailableTimeslots:
+      type: object
+      properties:
+        shipmentId:
+          type: string
+        timeslots:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeSlot'
+    Consignee:
+      type: object
+      properties:
+        postalCode:
+          type: string
+        city:
+          type: string
+    Coordinates:
+      type: object
+      properties:
+        latitude:
+          type: string
+        longitude:
+          type: string
+    CoordinatesVo:
+      type: object
+      properties:
+        utm33X:
+          type: string
+        utm33Y:
+          type: string
+        wgs84Y:
+          type: string
+        wgs84X:
+          type: string
+      xml:
+        name: serviceLocations
+    CurrentSelection:
+      type: object
+      properties:
+        homeDelivery:
+          $ref: '#/components/schemas/HomeDelivery'
+        servicePointDelivery:
+          $ref: '#/components/schemas/ServicePointDelivery'
+        terminalPickup:
+          $ref: '#/components/schemas/TerminalPickup'
+        signatureSelection:
+          $ref: '#/components/schemas/SignatureSelection'
+    DayVo:
+      type: object
+      properties:
+        dayNo:
+          type: integer
+          format: int32
+        dayName:
+          type: string
+      xml:
+        name: day
+    DeliveryOption:
+      type: object
+      properties:
+        price:
+          type: number
+        currency:
+          type: string
+        serviceLocationsVo:
+          $ref: '#/components/schemas/ServiceLocationsVo'
+    HomeDelivery:
+      type: object
+      properties:
+        timeSlot:
+          $ref: '#/components/schemas/TimeSlot'
+    HomeDeliveryOption:
+      required:
+        - timeSlot
+      type: object
+      properties:
+        price:
+          type: number
+        currency:
+          type: string
+        serviceLocationsVo:
+          $ref: '#/components/schemas/ServiceLocationsVo'
+        timeSlot:
+          $ref: '#/components/schemas/TimeSlot'
+    LandingPage:
+      type: object
+      properties:
+        shipmentId:
+          type: string
+        consignor:
+          type: string
+        consignee:
+          $ref: '#/components/schemas/Consignee'
+        changeAllowed:
+          type: boolean
+        changeNotAllowedReason:
+          type: string
+          enum:
+            - INVALID_PARCEL_ID
+            - DELIVERY_AGREED
+            - ALREADY_DELIVERED
+            - ALREADY_ON_TRUCK
+            - CUSTOMS_CLEARANCE
+            - RENT_OF_WAREHOUSE
+            - NOT_READY_FOR_DELIVERY
+            - NO_FLEX_WHEN_COD
+            - NOT_AT_TERMINAL_OR_SERVICE_POINT
+            - PICKUP_AT_TERMINAL
+            - FLEXED
+            - NOT_POSSIBLE_TO_DELIVER
+            - IS_RETURNED
+            - DEFAULT
+            - NO_HOME_DELIVERY_OPTIONS
+            - NO_TIMESLOTS
+        status:
+          type: string
+        servicePoint:
+          $ref: '#/components/schemas/ServicePoint'
+        returnDate:
+          type: string
+        homeDeliveryOption:
+          $ref: '#/components/schemas/HomeDeliveryOption'
+        servicePointOption:
+          $ref: '#/components/schemas/DeliveryOption'
+        terminalOption:
+          $ref: '#/components/schemas/TerminalOption'
+        availableTimeslots:
+          $ref: '#/components/schemas/AvailableTimeslots'
+        currentSelection:
+          $ref: '#/components/schemas/CurrentSelection'
+        showSignatureCheckbox:
+          type: boolean
+        workplaceDeliveryOption:
+          $ref: '#/components/schemas/DeliveryOption'
+    OpeningHour:
+      type: object
+      properties:
+        day:
+          type: string
+        dayNumber:
+          type: integer
+          format: int32
+        opens:
+          type: string
+        closes:
+          type: string
+    OpeningHours:
+      type: object
+      properties:
+        openingHours:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpeningHour'
+    OpeningHoursVo:
+      type: object
+      properties:
+        day:
+          $ref: '#/components/schemas/DayVo'
+        opens:
+          type: string
+        closes:
+          type: string
+      xml:
+        name: openingHours
+    ServiceLocationsVo:
+      type: object
+      properties:
+        id:
+          type: string
+        category:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        addressComponents:
+          $ref: '#/components/schemas/AddressComponentsVo'
+        coordinates:
+          $ref: '#/components/schemas/CoordinatesVo'
+        distance:
+          type: integer
+          format: int32
+        totalDistanceInMinutes:
+          type: integer
+          format: int32
+        openingHours:
+          type: array
+          xml:
+            wrapped: true
+          items:
+            $ref: '#/components/schemas/OpeningHoursVo'
+      xml:
+        name: serviceLocations
+    ServicePoint:
+      type: object
+      properties:
+        servicePointId:
+          type: string
+        servicePointName:
+          type: string
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
+        address:
+          $ref: '#/components/schemas/Address'
+        openingHours:
+          $ref: '#/components/schemas/OpeningHours'
+    ServicePointDelivery:
+      type: object
+      properties:
+        servicePointId:
+          type: string
+    SignatureSelection:
+      type: object
+      properties:
+        requireSignature:
+          type: boolean
+    TerminalOption:
+      required:
+        - countryCode
+        - terminalId
+      type: object
+      properties:
+        terminalId:
+          type: string
+        countryCode:
+          type: string
+    TerminalPickup:
+      type: object
+      properties:
+        terminalId:
+          type: string
+        country:
+          type: string
+    DetailCheck:
+      required:
+        - status
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - UP
+            - FATAL
+            - DOWN
+        name:
+          type: string
+        detailCheck:
+          $ref: '#/components/schemas/ParamValue2'
+    Health:
+      required:
+        - status
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - UP
+            - FATAL
+            - DOWN
+        name:
+          type: string
+        detailChecks:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetailCheck'
+    ParamValue2:
+      type: object
+      properties:
+        param:
+          type: string
+        value:
+          type: string
